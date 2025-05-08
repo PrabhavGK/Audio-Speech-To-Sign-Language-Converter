@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+    <title>Sign Language Translator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f0f0f0; padding-bottom: 20px; }
+        .transcription { background-color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 18px; }
+        .word-container { background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+                          padding: 20px; margin-bottom: 15px; text-align: center; width: 100%; max-width: 600px; }
+        .stack-container { display: flex; flex-direction: column-reverse; align-items: center; width: 100%; }
+        .word { font-weight: bold; font-size: 2em; color: #333; padding: 10px; }
+        .video-container { width: 100%; max-width: 320px; margin: 0 auto; position: relative; }
+        video { width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
+        .sentence-container { background-color: #e6f7ff; padding: 15px; border-radius: 8px; 
+                             margin-bottom: 30px; border-left: 4px solid #1890ff; width: 100%; }
+        .status { text-align: center; padding: 10px; background-color: #fff3cd; color: #856404; 
+                 border-radius: 5px; margin: 20px 0; }
+        #auto-refresh-toggle { position: fixed; top: 10px; right: 10px; padding: 5px 10px; 
+                              background-color: #4CAF50; color: white; border: none; 
+                              border-radius: 4px; cursor: pointer; }
+        #timestamp { display: none; }
+        .source-info { padding: 8px 12px; border-radius: 4px; display: inline-block; 
+                       font-weight: bold; margin: 5px; }
+        .microphone-blocked { background-color: #f44336; color: white; }
+        .microphone-allowed { background-color: #4CAF50; color: white; }
+        .controls { display: flex; justify-content: center; margin-bottom: 20px; }
+        .no-video-text { font-style: italic; color: #666; font-size: 0.8em; margin-top: 5px; }
+        .word-0 { background-color: #e3f2fd; }
+        .word-1 { background-color: #bbdefb; }
+        .word-2 { background-color: #90caf9; }
+        .word-3 { background-color: #64b5f6; }
+        .word-4 { background-color: #42a5f5; }
+        .word-5 { background-color: #2196f3; color: white; }
+        .word-6 { background-color: #1e88e5; color: white; }
+        .word-7 { background-color: #1976d2; color: white; }
+        .word-8 { background-color: #1565c0; color: white; }
+        .word-9 { background-color: #0d47a1; color: white; }
+        .video-controls { display: flex; justify-content: center; margin-top: 5px; }
+        .video-controls button { background: #2196f3; color: white; border: none; padding: 5px 10px; margin: 0 5px; border-radius: 4px; cursor: pointer; }
+        .debug-info { font-size: 0.7em; color: #999; margin-top: 5px; overflow-wrap: break-word; word-break: break-all; }
+        .gmeet-status { padding: 8px 12px; border-radius: 4px; display: inline-block; font-weight: bold; margin: 5px; }
+        .gmeet-active { background-color: #4CAF50; color: white; }
+        .gmeet-inactive { background-color: #f44336; color: white; }
+            </style>
+    <script>
+        function checkForUpdates() {
+            fetch(window.location.href + '?t=' + new Date().getTime())
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+                    const newTimestamp = newDoc.getElementById('timestamp');
+                    const currentTimestamp = document.getElementById('timestamp');
+                    
+                    if (newTimestamp && currentTimestamp && newTimestamp.textContent !== currentTimestamp.textContent) {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    }
+                });
+        }
+        
+        function toggleAutoRefresh() {
+            const button = document.getElementById('auto-refresh-toggle');
+            if (button.textContent === 'Auto-Refresh: ON') {
+                button.textContent = 'Auto-Refresh: OFF';
+                button.style.backgroundColor = '#f44336';
+                clearInterval(window.refreshInterval);
+            } else {
+                button.textContent = 'Auto-Refresh: ON';
+                button.style.backgroundColor = '#4CAF50';
+                window.refreshInterval = setInterval(checkForUpdates, 1000);
+            }
+        }
+        
+        function playVideo(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                video.play();
+            }
+        }
+        
+        function pauseVideo(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                video.pause();
+            }
+        }
+        
+        function restartVideo(videoId) {
+            const video = document.getElementById(videoId);
+            if (video) {
+                video.currentTime = 0;
+                video.play();
+            }
+        }
+        
+        window.onload = function() {
+            toggleAutoRefresh();
+            
+            // Auto-play all videos (important for sign language videos)
+            const videos = document.querySelectorAll('video');
+            videos.forEach((video, index) => {
+                video.play().catch(error => {
+                    console.log('Auto-play prevented:', error);
+                });
+                
+                // Also add event listener for when video ends to restart it
+                video.addEventListener('ended', function() {
+                    this.currentTime = 0;
+                    this.play();
+                });
+            });
+        };
+    </script>
+        </head>
+        <body>
+    <h2>Sign Language Translator</h2>
+    <button id="auto-refresh-toggle" onclick="toggleAutoRefresh()">Auto-Refresh: OFF</button>
+    
+    <div class="controls">
+        <div class="source-info microphone-{"allowed" if self.allow_mic else "blocked"}">
+            Audio Source: System Audio ONLY (Google Meet)
+        </div>
+        <div class="gmeet-status gmeet-{"active" if self.gmeet_active else "inactive"}">
+            Google Meet: ACTIVE
+        </div>
+    </div>
+    
+    <div id="status" class="status">Translating speech from Google Meet participants...</div>
+    <div id="timestamp">1746741136.309514</div>
+    <div id="content">
+        <div class="transcription"><strong>Transcription:</strong> That You Are</div>
+
+        <div class="stack-container">
+
+        <div class="word-container word-0">
+            <div class="word">Are</div>
+
+            <div class="video-container">
+                <video id="video_0" autoplay loop muted playsinline controls>
+                    <source src="http://127.0.0.1:8000/static/Are.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-controls">
+                    <button onclick="playVideo('video_0')">▶️ Play</button>
+                    <button onclick="restartVideo('video_0')">🔄 Restart</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="word-container word-1">
+            <div class="word">You</div>
+
+            <div class="video-container">
+                <video id="video_1" autoplay loop muted playsinline controls>
+                    <source src="http://127.0.0.1:8000/static/You.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-controls">
+                    <button onclick="playVideo('video_1')">▶️ Play</button>
+                    <button onclick="restartVideo('video_1')">🔄 Restart</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="word-container word-2">
+            <div class="word">That</div>
+
+            <div class="video-container">
+                <video id="video_2" autoplay loop muted playsinline controls>
+                    <source src="http://127.0.0.1:8000/static/That.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-controls">
+                    <button onclick="playVideo('video_2')">▶️ Play</button>
+                    <button onclick="restartVideo('video_2')">🔄 Restart</button>
+                </div>
+            </div>
+
+        </div>
+
+        </div>
+
+    </div>
+        </body>
+        </html>

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 2,
+  "name": "Sign Language Translator",
+  "version": "1.0",
+  "description": "Real-time sign language translation for Google Meet",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "https://meet.google.com/*",
+    "webRequest",
+    "webRequestBlocking",
+    "tabs"
+  ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "web_accessible_resources": [
+    "vosk-worker.js",
+    "vosk-model/*"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'; media-src * blob:; connect-src 'self' http://localhost:8000 https://meet.google.com",
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+} 

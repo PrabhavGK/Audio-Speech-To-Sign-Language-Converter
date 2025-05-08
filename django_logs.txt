@@ -1,0 +1,22 @@
+[nltk_data] Downloading package averaged_perceptron_tagger to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package averaged_perceptron_tagger is already up-to-
+[nltk_data]       date!
+[nltk_data] Downloading package wordnet to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package omw-1.4 to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package omw-1.4 is already up-to-date!
+[nltk_data] Downloading package averaged_perceptron_tagger to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package averaged_perceptron_tagger is already up-to-
+[nltk_data]       date!
+[nltk_data] Downloading package wordnet to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package omw-1.4 to
+[nltk_data]     /home/gkprabhav/nltk_data...
+[nltk_data]   Package omw-1.4 is already up-to-date!
+Watching for file changes with StatReloader
+Error: That port is already in use.

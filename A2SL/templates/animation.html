@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .word-display {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-size: 18px;
+        color: #343a40;
+        font-weight: 500;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .video-container {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: white;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Upload Audio</h3>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="audio">Select Audio File:</label>
+                            <input type="file" class="form-control-file" id="audio" name="audio" accept="audio/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Convert to Sign Language</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Sign Language Animation</h3>
+                </div>
+                <div class="card-body">
+                    {% if text %}
+                    <div class="mb-3">
+                        <h4>Recognized Text:</h4>
+                        <p class="lead">{{ text }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if missing_videos %}
+                    <div class="alert alert-warning">
+                        <h5>Missing Animations:</h5>
+                        <ul>
+                            {% for video in missing_videos %}
+                            <li>{{ video }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div id="animation-container" class="text-center">
+                        {% if words %}
+                        {% for word in words %}
+                        <div class="video-container mb-3">
+                            <h5 class="word-display">{{ word }}</h5>
+                            <video width="320" height="240" controls>
+                                <source src="{{ word }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to handle API responses
+function handleApiResponse(data) {
+    const container = document.getElementById('animation-container');
+    container.innerHTML = ''; // Clear existing content
+    
+    if (data.error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = data.error;
+        container.appendChild(errorDiv);
+        return;
+    }
+    
+    // Display recognized text
+    const textDiv = document.createElement('div');
+    textDiv.className = 'mb-3';
+    textDiv.innerHTML = `<h4>Recognized Text:</h4><p class="lead">${data.text}</p>`;
+    container.appendChild(textDiv);
+    
+    // Display missing videos if any
+    if (data.missing_videos) {
+        const missingDiv = document.createElement('div');
+        missingDiv.className = 'alert alert-warning';
+        missingDiv.innerHTML = `
+            <h5>Missing Animations:</h5>
+            <ul>
+                ${data.missing_videos.map(video => `<li>${video}</li>`).join('')}
+            </ul>
+        `;
+        container.appendChild(missingDiv);
+    }
+    
+    // Display videos
+    if (data.formatted_words && data.videos) {
+        data.videos.forEach((video, index) => {
+            const videoDiv = document.createElement('div');
+            videoDiv.className = 'video-container mb-3';
+            
+            // Display capitalized word
+            let displayWord = index < data.formatted_words.length ? data.formatted_words[index] : video;
+            
+            videoDiv.innerHTML = `
+                <h5 class="word-display">${displayWord}</h5>
+                <video width="320" height="240" controls>
+                    <source src="${video}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+            container.appendChild(videoDiv);
+        });
+    } else if (data.words) {
+        data.words.forEach(word => {
+            const videoDiv = document.createElement('div');
+            videoDiv.className = 'video-container mb-3';
+            videoDiv.innerHTML = `
+                <h5 class="word-display">${word}</h5>
+                <video width="320" height="240" controls>
+                    <source src="${word}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+            container.appendChild(videoDiv);
+        });
+    }
+}
+
+// Add event listener for messages from the extension
+window.addEventListener('message', function(event) {
+    if (event.data.type === 'sign_language_response') {
+        handleApiResponse(event.data.data);
+    }
+});
+</script>
+{% endblock %} 

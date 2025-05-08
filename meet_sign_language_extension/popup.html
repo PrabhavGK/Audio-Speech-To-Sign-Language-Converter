@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sign Language for Google Meet</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1557b0;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      background-color: #f1f3f4;
+    }
+    .active {
+      background-color: #e6f4ea;
+      color: #137333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Sign Language for Google Meet</h2>
+    <button id="toggleButton">Start Translation</button>
+    <div id="status" class="status">Status: Inactive</div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
