@@ -1,13 +1,29 @@
 {% extends 'base.html' %}
-{% load static %}
-
 
 {% block content %}
-<video width="500" height="380" class="center" autoplay loop>
-  <source src= "{% static 'Hello.mp4' %}" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-	<div class="form-style" align="middle" >
-	<a href="{% url 'animation' %}"><button class="button">Click to Start</button></a>
-	</div>
+<div class="card">
+    <h1 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">Welcome to Sign Language Converter</h1>
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <p style="font-size: 1.2rem; margin-bottom: 1rem;">Convert your speech to sign language animations in real-time</p>
+        <a href="{% url 'animation' %}" class="btn">Start Converting</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem;">
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Real-time Conversion</h3>
+            <p>Convert your speech to sign language animations instantly using our advanced technology.</p>
+        </div>
+        
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Easy to Use</h3>
+            <p>Simple and intuitive interface that makes communication accessible to everyone.</p>
+        </div>
+        
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Accurate Results</h3>
+            <p>High-quality animations that accurately represent sign language gestures.</p>
+        </div>
+    </div>
+</div>
 {% endblock %}

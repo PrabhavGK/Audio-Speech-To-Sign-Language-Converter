@@ -1,18 +1,23 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="form-style">
-	<h1>Sign Up</h1>
-	<form class="site-form" action="." method="post">
+<div class="card" style="max-width: 500px; margin: 2rem auto;">
+	<h2 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">Sign Up</h2>
+	
+	<form method="post" class="form-style">
 		{% csrf_token %}
-		{{ form }}
-		<br><br>
-		<input class="submit" type="submit" value="Sign Up">
-
+		{% for field in form %}
+		<div class="form-group">
+			<label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+			{{ field.errors }}
+			{{ field }}
+		</div>
+		{% endfor %}
+		<button type="submit" class="btn" style="width: 100%;">Sign Up</button>
 	</form>
+	
+	<div style="text-align: center; margin-top: 1.5rem;">
+		<p>Already have an account? <a href="{% url 'login' %}" style="color: var(--primary-color); text-decoration: none;">Login</a></p>
+	</div>
 </div>
-<script type="text/javascript">
-	document.getElementsByTagName("span")[0].innerHTML="";
-	document.getElementsByTagName("span")[1].innerHTML="";
-</script>
 {% endblock %}

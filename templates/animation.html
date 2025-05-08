@@ -1,166 +1,370 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
 {% block content %}
-<div class="split left">
-	<h2 align="center">Enter Text or Use Mic</h2>
-	<br>
-		<form action="" method="post" align="left">
-		{% csrf_token %}
-					<input type="text" name="sen" class="mytext" id="speechToText" placeholder="">
-					<button type="button" name="button" class="mic" onclick="record()"><img src="{% static 'mic3.png' %}" height="32px" width="38px" /></button>
-		  			&nbsp&nbsp&nbsp&nbsp
-		  			<input type="submit" name="submit" class="submit">
+<div class="card">
+    <h1 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">Sign Language Converter</h1>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Input</h3>
+            <form method="post" enctype="multipart/form-data" class="form-style" id="audioForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="audio" class="form-label">Upload Audio File</label>
+                    <input type="file" name="audio" id="audio" class="form-input" accept="audio/*">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Or Record Audio</label>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button type="button" id="recordButton" class="btn" style="background: #dc2626;">
+                            <i class="fas fa-microphone"></i> Start Recording
+                        </button>
+                        <button type="button" id="stopButton" class="btn" style="background: #4b5563;" disabled>
+                            <i class="fas fa-stop"></i> Stop Recording
+                        </button>
+                    </div>
+                    <div id="recordingStatus" style="margin-top: 0.5rem; display: none;">
+                        <span style="color: #dc2626;">●</span> Recording...
+                    </div>
+                    <audio id="recordedAudio" controls style="margin-top: 1rem; display: none;"></audio>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Convert to Sign Language</button>
+            </form>
+            {% if error %}
+            <div style="color: #dc2626; margin-top: 1rem;">{{ error }}</div>
+            {% endif %}
+            {% if text %}
+            <div style="margin-top: 1rem;">
+                <h4 style="color: var(--primary-color);">Recognized Text:</h4>
+                <p>{{ text }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Sign Language Animation</h3>
+            {% if words %}
+            <div id="videoContainer" style="text-align: center;">
+                <video id="videoPlayer" width="100%" height="auto" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div id="wordList" style="margin-top: 1rem;">
+                    {% for word, videos in word_video_mapping.items %}
+                    <div class="word-group" style="margin: 0.5rem 0;">
+                        <span class="word" style="display: inline-block; margin: 0.25rem; padding: 0.25rem 0.5rem; background: var(--card-bg); border-radius: 0.25rem;">{{ word }}</span>
+                        <span class="arrow" style="display: inline-block; margin: 0 0.5rem;">→</span>
+                        {% for video in videos %}
+                        <span class="video" style="display: inline-block; margin: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-color); color: var(--light-text); border-radius: 0.25rem;">{{ video }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% if missing_videos %}
+            <div style="margin-top: 1rem; color: #dc2626;">
+                <h4>Missing Animations:</h4>
+                <p>The following letters/words don't have sign language animations: {{ missing_videos|join:", " }}</p>
+            </div>
+            {% endif %}
+            {% else %}
+            <div style="text-align: center; padding: 2rem;">
+                <p>Your sign language animation will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-		</form>
-		<br>
-		<table cellspacing="20px">
-			<tr>
-				<td class="td">The text that you entered is:</td>
-				<td class="td">{{ text }}</td>
-			</tr>
-			<tr>
-				<td class="td">Key words in sentence:</td>
-				<td class="td">
-				<ul class="td" id="list" align="center">
-  					{% for word in words %}
-    				<li id="{{ i }}" style="margin-right: 8px">{{ word }}</li>
-  					{% endfor %}
-				</ul>
-			</td>
-		</tr>
-	</table></div>
-  <div class="split right">
-  <h2 align="center">Sign Language Animation</h2>
+    <div class="card" style="background: white;">
+        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Instructions</h3>
+        <ol style="padding-left: 1.5rem;">
+            <li>Either upload an audio file or record your voice</li>
+            <li>Click the "Convert to Sign Language" button</li>
+            <li>Wait for the conversion to complete</li>
+            <li>Watch the generated sign language animation</li>
+        </ol>
+    </div>
+</div>
 
-	<div style="text-align:center">	&nbsp&nbsp
-  	<button class="submit" onclick="playPause()">Play/Pause</button>
-  	<!--  LETS USE ONLY PLAY PAUSE BUTTON WITH 720 *420 ,IT FITS THE SCREEN ASHISH
+{% if words %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var videoPlayer = document.getElementById('videoPlayer');
+        var words = {{ words|safe }};
+        var currentWordIndex = 0;
+        var videoSources = [];
 
-  	<button onclick="makeBig()">Big</button>
-  	<button onclick="makeSmall()">Small</button>
-  	<button onclick="makeNormal()">Normal</button>-->
+        // Prepare video sources
+        words.forEach(function(word) {
+            // Try assets folder first, then static folder
+            var assetPath = '/assets/' + word + '.mp4';
+            var staticPath = '/static/' + word + '.mp4';
+            
+            // Add both paths to the sources array
+            videoSources.push({
+                word: word,
+                paths: [assetPath, staticPath]
+            });
+        });
 
+        // Function to play next video
+        function playNextVideo() {
+            if (currentWordIndex < videoSources.length) {
+                var currentSource = videoSources[currentWordIndex];
+                var source = document.createElement('source');
+                
+                // Try the first path (assets)
+                source.src = currentSource.paths[0];
+                source.type = 'video/mp4';
+                
+                // Clear previous sources
+                while (videoPlayer.firstChild) {
+                    videoPlayer.removeChild(videoPlayer.firstChild);
+                }
+                
+                videoPlayer.appendChild(source);
+                videoPlayer.load();
+                
+                // Handle video loading error
+                videoPlayer.onerror = function() {
+                    console.log('Failed to load video from assets, trying static path');
+                    // If assets path fails, try static path
+                    source.src = currentSource.paths[1];
+                    videoPlayer.load();
+                };
+                
+                videoPlayer.play().catch(function(error) {
+                    console.error('Error playing video:', error);
+                });
+                
+                // Highlight current word
+                var wordElements = document.getElementsByClassName('video');
+                for (var i = 0; i < wordElements.length; i++) {
+                    wordElements[i].style.background = 'var(--primary-color)';
+                    wordElements[i].style.color = 'var(--light-text)';
+                }
+                if (wordElements[currentWordIndex]) {
+                    wordElements[currentWordIndex].style.background = '#2563eb';
+                    wordElements[currentWordIndex].style.color = 'white';
+                }
+            }
+        }
 
-  	<video id="videoPlayer" width="600" height="350" controls preload="auto">
-    	<source src="" type="video/mp4; codecs=avc1.42E01E, mp4a.40.2">
-    Your browser does not support HTML5 video.
-  	</video>
-  	</div></div>
+        // Play first video
+        playNextVideo();
 
+        // Handle video end
+        videoPlayer.addEventListener('ended', function() {
+            currentWordIndex++;
+            if (currentWordIndex < videoSources.length) {
+                playNextVideo();
+            }
+        });
+    });
+</script>
+{% endif %}
 
 <script>
-	//webkitSpeechRecognition api for speech to text conversion
-	function record(){
-		var recognition = new webkitSpeechRecognition();
-		recognition.lang='en-IN';
+document.addEventListener('DOMContentLoaded', function() {
+    const recordButton = document.getElementById('recordButton');
+    const stopButton = document.getElementById('stopButton');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const recordedAudio = document.getElementById('recordedAudio');
+    const audioInput = document.getElementById('audio');
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let stream = null;
+    let audioContext = null;
+    let startTime = null;
 
-		recognition.onresult = function(event){
-			console.log(event)
-			document.getElementById('speechToText').value = event.results[0][0].transcript;
-		}
-		recognition.start();
-	 }
-	function play()
-	{
-		var videoSource = new Array();
-		var	videos = document.getElementById("list").getElementsByTagName("li");
-		var j;
-		for(j=0;j<videos.length;j++)
-		{
-			var word = videos[j].innerHTML;
-			videoSource[j] = "/static/" + word + ".mp4";
-			console.log("Loading video source:", videoSource[j]);
-		}
+    // Request microphone access and set up recording
+    recordButton.addEventListener('click', async () => {
+        try {
+            // Clean up any existing recording
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext) {
+                await audioContext.close();
+            }
+            if (recordedAudio.src) {
+                URL.revokeObjectURL(recordedAudio.src);
+            }
+            
+            // Reset variables
+            audioChunks = [];
+            mediaRecorder = null;
+            stream = null;
+            audioContext = null;
+            
+            // Get new stream
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    channelCount: 1,
+                    sampleRate: 16000,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
+            
+            // Create new audio context
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+            
+            // Create new media recorder
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm',
+                audioBitsPerSecond: 16000
+            });
+            
+            startTime = Date.now();
 
-		var i = 0; // define i
-		var videoCount = videoSource.length;
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
 
-		function videoPlay(videoNum)
-		{
-			document.getElementById("list").getElementsByTagName("li")[videoNum].style.color = "#09edc7";
-			document.getElementById("list").getElementsByTagName("li")[videoNum].style.fontSize = "xx-large";
-			var videoPlayer = document.getElementById("videoPlayer");
-			
-			// Create new source element
-			var source = document.createElement('source');
-			source.setAttribute('src', videoSource[videoNum]);
-			source.setAttribute('type', 'video/mp4; codecs=avc1.42E01E, mp4a.40.2');
-			
-			// Remove any existing sources
-			while (videoPlayer.firstChild) {
-				videoPlayer.removeChild(videoPlayer.firstChild);
-			}
-			
-			// Add the new source
-			videoPlayer.appendChild(source);
-			console.log("Playing video:", videoSource[videoNum]);
-			
-			// Add error handling
-			videoPlayer.onerror = function(e) {
-				console.error("Video error:", videoPlayer.error);
-				console.error("Error code:", videoPlayer.error.code);
-				console.error("Error message:", videoPlayer.error.message);
-			};
-			
-			// Load and play
-			videoPlayer.load();
-			var playPromise = videoPlayer.play();
-			
-			if (playPromise !== undefined) {
-				playPromise.then(_ => {
-					console.log("Video playback started successfully");
-				})
-				.catch(error => {
-					console.error("Error playing video:", error);
-				});
-			}
-		}
-		document.getElementById('videoPlayer').addEventListener('ended', myHandler, false);
-		document.getElementById("list").getElementsByTagName("li")[0].style.color = "#09edc7";
-		document.getElementById("list").getElementsByTagName("li")[0].style.fontSize = "xx-large";
+            mediaRecorder.addEventListener('stop', async () => {
+                try {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // Convert WebM to WAV
+                    const audioData = await audioBlob.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(audioData);
+                    
+                    // Create a new audio buffer with the correct duration
+                    const newBuffer = audioContext.createBuffer(
+                        1, // mono
+                        audioBuffer.length,
+                        audioContext.sampleRate
+                    );
+                    
+                    // Copy the audio data
+                    const channelData = audioBuffer.getChannelData(0);
+                    const newChannelData = newBuffer.getChannelData(0);
+                    for (let i = 0; i < channelData.length; i++) {
+                        newChannelData[i] = channelData[i];
+                    }
+                    
+                    // Convert to WAV
+                    const wavBlob = await convertToWav(newBuffer);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    recordedAudio.src = audioUrl;
+                    recordedAudio.style.display = 'block';
 
-		videoPlay(0); // play the video
+                    // Create a File object from the WAV Blob
+                    const audioFile = new File([wavBlob], 'recorded_audio.wav', { type: 'audio/wav' });
+                    
+                    // Create a new FileList-like object
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(audioFile);
+                    audioInput.files = dataTransfer.files;
+                } catch (error) {
+                    console.error('Error processing audio:', error);
+                    alert('Error processing audio. Please try again.');
+                }
+            });
 
-		function myHandler()
-		{
-	 		document.getElementById("list").getElementsByTagName("li")[i].style.color = "#feda6a";
-			document.getElementById("list").getElementsByTagName("li")[i].style.fontSize = "20px";
-			i++;
-	    	if (i == videoCount)
-	    	{
-	       	    document.getElementById("videoPlayer").pause();
-	    	}
-	     	else
-	     	{
-	        	videoPlay(i);
-	    	}
-		}
-	}
-	/* LETS USE ONLY PLAY PAUSE BUTTON WITH 720 *420 ,IT FITS THE SCREEN
-	function makeBig() {
-	    document.getElementById("videoPlayer").width = 560;
-		document.getElementById("videoPlayer").height = 360;
-	}
+            mediaRecorder.start(100); // Collect data every 100ms
+            recordButton.disabled = true;
+            stopButton.disabled = false;
+            recordingStatus.style.display = 'block';
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Error accessing microphone. Please make sure you have granted microphone permissions.');
+        }
+    });
 
-	function makeSmall() {
-	    document.getElementById("videoPlayer").width = 320;
-		document.getElementById("videoPlayer").height = 180;
-	}
+    stopButton.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            recordButton.disabled = false;
+            stopButton.disabled = true;
+            recordingStatus.style.display = 'none';
+        }
+    });
 
-	function makeNormal() {
-	    document.getElementById("videoPlayer").width = 420;
-		document.getElementById("videoPlayer").height =280;
-	}*/
-	function playPause(){
-  		if (document.getElementById("videoPlayer").paused){
-    		play();}
-  		else{
-    		document.getElementById("videoPlayer").pause();}
-		}
+    // Clean up resources when leaving the page
+    window.addEventListener('beforeunload', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        if (audioContext) {
+            audioContext.close();
+        }
+        if (recordedAudio.src) {
+            URL.revokeObjectURL(recordedAudio.src);
+        }
+    });
 
-	</script>
+    // Function to convert AudioBuffer to WAV format
+    async function convertToWav(audioBuffer) {
+        const numChannels = 1;
+        const sampleRate = 16000;
+        const format = 1; // PCM
+        const bitDepth = 16;
 
+        const bytesPerSample = bitDepth / 8;
+        const blockAlign = numChannels * bytesPerSample;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = audioBuffer.length * blockAlign;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
 
+        // RIFF identifier
+        writeString(view, 0, 'RIFF');
+        // RIFF chunk length
+        view.setUint32(4, 36 + dataSize, true);
+        // RIFF type
+        writeString(view, 8, 'WAVE');
+        // format chunk identifier
+        writeString(view, 12, 'fmt ');
+        // format chunk length
+        view.setUint32(16, 16, true);
+        // sample format (raw)
+        view.setUint16(20, format, true);
+        // channel count
+        view.setUint16(22, numChannels, true);
+        // sample rate
+        view.setUint32(24, sampleRate, true);
+        // byte rate (sample rate * block align)
+        view.setUint32(28, byteRate, true);
+        // block align (channel count * bytes per sample)
+        view.setUint16(32, blockAlign, true);
+        // bits per sample
+        view.setUint16(34, bitDepth, true);
+        // data chunk identifier
+        writeString(view, 36, 'data');
+        // data chunk length
+        view.setUint32(40, dataSize, true);
+
+        // Write the PCM samples
+        const offset = 44;
+        const channelData = audioBuffer.getChannelData(0);
+        for (let i = 0; i < channelData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, channelData[i]));
+            const value = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+            view.setInt16(offset + i * 2, value, true);
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    // Helper function to write strings to DataView
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+});
+</script>
 {% endblock %}

@@ -1,19 +1,46 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="card">
+    <h1 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">About Sign Language Converter</h1>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Our Mission</h3>
+            <p>We aim to bridge the communication gap between hearing and non-hearing individuals by providing an accessible and accurate sign language conversion tool.</p>
+        </div>
+        
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">How It Works</h3>
+            <p>Our system uses advanced speech recognition and animation technology to convert spoken words into sign language gestures in real-time.</p>
+        </div>
+        
+        <div class="card" style="background: white;">
+            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Technology</h3>
+            <p>Built with cutting-edge AI and machine learning algorithms to ensure accurate and natural sign language animations.</p>
+        </div>
+    </div>
 
-<h2>VERSION 1.0.0</h2>
- 	<hr>
-	<h2>We are just a bunch of Enthusiastic people,who wants to help The Society.</h2>
-	<hr>
- 	<h2>Our Creator Team:</h2>
- 	<hr>
- 	<ul class="td">
-		<li>JIGAR GAJJAR</li>
-		<li>ASHISH BAVALIYA</li>
-		<li>DHAIRYA GADANI</li>
- 		<li>NILKANTH PATADIYA</li>
-  	</ul>
-	<hr>
-	<p class="td">Thank you, For visiting our website</p>
+    <div class="card" style="background: white;">
+        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Features</h3>
+        <ul style="list-style-type: none; padding: 0;">
+            <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                <span style="color: var(--primary-color); position: absolute; left: 0;">•</span>
+                Real-time speech to sign language conversion
+            </li>
+            <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                <span style="color: var(--primary-color); position: absolute; left: 0;">•</span>
+                High-quality animations
+            </li>
+            <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                <span style="color: var(--primary-color); position: absolute; left: 0;">•</span>
+                User-friendly interface
+            </li>
+            <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                <span style="color: var(--primary-color); position: absolute; left: 0;">•</span>
+                Support for multiple languages
+            </li>
+        </ul>
+    </div>
+</div>
 {% endblock %}
