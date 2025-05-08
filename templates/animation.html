@@ -43,8 +43,8 @@
   	<button onclick="makeNormal()">Normal</button>-->
 
 
-  	<video id="videoPlayer" width="600" height="350"  preload="auto" autoplay>
-    	<source src="" type="video/mp4">
+  	<video id="videoPlayer" width="600" height="350" controls preload="auto">
+    	<source src="" type="video/mp4; codecs=avc1.42E01E, mp4a.40.2">
     Your browser does not support HTML5 video.
   	</video>
   	</div></div>
@@ -69,7 +69,9 @@
 		var j;
 		for(j=0;j<videos.length;j++)
 		{
-			videoSource[j] = "/static/" + videos[j].innerHTML +".mp4";
+			var word = videos[j].innerHTML;
+			videoSource[j] = "/static/" + word + ".mp4";
+			console.log("Loading video source:", videoSource[j]);
 		}
 
 		var i = 0; // define i
@@ -79,10 +81,41 @@
 		{
 			document.getElementById("list").getElementsByTagName("li")[videoNum].style.color = "#09edc7";
 			document.getElementById("list").getElementsByTagName("li")[videoNum].style.fontSize = "xx-large";
-			document.getElementById("videoPlayer").setAttribute("src", videoSource[videoNum]);
-	    	document.getElementById("videoPlayer").load();
-	    	document.getElementById("videoPlayer").play();
-
+			var videoPlayer = document.getElementById("videoPlayer");
+			
+			// Create new source element
+			var source = document.createElement('source');
+			source.setAttribute('src', videoSource[videoNum]);
+			source.setAttribute('type', 'video/mp4; codecs=avc1.42E01E, mp4a.40.2');
+			
+			// Remove any existing sources
+			while (videoPlayer.firstChild) {
+				videoPlayer.removeChild(videoPlayer.firstChild);
+			}
+			
+			// Add the new source
+			videoPlayer.appendChild(source);
+			console.log("Playing video:", videoSource[videoNum]);
+			
+			// Add error handling
+			videoPlayer.onerror = function(e) {
+				console.error("Video error:", videoPlayer.error);
+				console.error("Error code:", videoPlayer.error.code);
+				console.error("Error message:", videoPlayer.error.message);
+			};
+			
+			// Load and play
+			videoPlayer.load();
+			var playPromise = videoPlayer.play();
+			
+			if (playPromise !== undefined) {
+				playPromise.then(_ => {
+					console.log("Video playback started successfully");
+				})
+				.catch(error => {
+					console.error("Error playing video:", error);
+				});
+			}
 		}
 		document.getElementById('videoPlayer').addEventListener('ended', myHandler, false);
 		document.getElementById("list").getElementsByTagName("li")[0].style.color = "#09edc7";
